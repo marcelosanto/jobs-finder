@@ -21,7 +21,7 @@ pub struct User {
     pub avatar_url: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone,PartialEq)]
 pub struct Label {
     pub  name: String,
     pub color: String,
@@ -29,7 +29,7 @@ pub struct Label {
 
 pub async fn get_jobs()-> reqwest::Result<Vec<Issue>> {
     
-    let response = Client::new().get("https://api.github.com/repos/react-brasil/vagas/issues?page=1&per_page=20")
+    let response = Client::new().get("https://api.github.com/repos/frontendbr/vagas/issues?page=1&per_page=20")
     .send()    
     .await?;
 

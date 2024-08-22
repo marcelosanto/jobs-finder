@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use api::Label;
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{info, Level};
 
@@ -59,11 +60,7 @@ fn Home() -> Element {
     let jobs = use_resource(move || async move { api::get_jobs().await });
 
     rsx! {
-        div {
-            class: "container mx-auto mt-10 flex justify-center",
-
-        }
-            Link {
+           Link {
                 to: Route::Blog {
                     id: 22
                 },
@@ -71,7 +68,7 @@ fn Home() -> Element {
             }
             style {{include_str!("../assets/tailwind.css")}}
            body { class: "bg-gray-50 p-8 mt-10",
-            div { class:"max-w-4xl mx-auto",
+            div { class:"max-w-md mx-auto",
             //<!-- Header -->
             div { class:"bg-purple-100 p-6 rounded-lg text-center mb-8",
                 h1 { class:"text-xl font-semibold", "Discover your ideal career right here!"}
@@ -82,7 +79,7 @@ fn Home() -> Element {
            }
 
            // <!-- Job Listings -->
-            div {class:"grid grid-cols-1 sm:grid-cols-2 gap-6",
+            div {class:"grid grid-cols-1 sm:grid-cols-2 gap-6 sm:grid-cols-3",
               //  <!-- Job Card -->
 
 
@@ -91,9 +88,7 @@ fn Home() -> Element {
                     Some(Ok(resp)) => {
 
                             rsx! {
-                              //  Link { to: Route::Home {}, "Go to counter" },
-                              for i in 0..resp.len()-1{
-
+                              for i in 0..resp.len(){
                               Card {
                                 title: "{resp[i].title}",
                                 role: "UI/UX Designer",
@@ -102,7 +97,8 @@ fn Home() -> Element {
                                 experience: "5 years",
                                 skills: "Figma, Sketch, Adobe XD",
                                 description: "Looking for a creative UI/UX Designer to join our team.",
-                                site: "{resp[i].html_url}"
+                                site: "{resp[i].html_url}",
+                                labels: resp[i].labels.clone()
                             }}
                         }
 
@@ -147,6 +143,7 @@ fn Card(
     skills: String,
     description: String,
     site: String,
+    labels: Vec<Label>
 ) -> Element {
     let mut is_expanded = use_signal(|| false);
 
@@ -158,7 +155,10 @@ fn Card(
                     img {src:"https://w7.pngwing.com/pngs/786/126/png-transparent-logo-contracting-photography-logo-symbol.png", alt:"Vista Logo", class:"w-10 h-10 mr-3"}
                     div {
                         h2 { class: "text-xl font-bold", "{title}" }
-                    p { "{role}" }
+                        for i in 0..labels.len() {
+                            span { class:"bg-blue-100 text-blue-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300","{labels[i].name}"}
+
+                        }
                     }
         }
                 a {r#type:"link",class:"text-blue-500 text-xs font-semibold",href:"{site}","Onsite"
