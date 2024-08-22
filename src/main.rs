@@ -3,6 +3,8 @@
 use dioxus::prelude::*;
 use dioxus_logger::tracing::{info, Level};
 
+mod api;
+
 #[derive(Clone, Routable, Debug, PartialEq)]
 enum Route {
     #[route("/")]
@@ -26,27 +28,47 @@ fn App() -> Element {
 
 #[component]
 fn Blog(id: i32) -> Element {
-    rsx! {
-        Link { to: Route::Home {}, "Go to counter" }
-        "Blog post {id}"
-    }
+    let jobs = use_resource(move || async move { api::get_jobs().await });
+
+    rsx! {match &*jobs.read() {
+        Some(Ok(resp)) => {
+
+                rsx! {
+                    Link { to: Route::Home {}, "Go to counter" },
+                p {"Blog post {&resp:?}"}
+            }
+
+            //println!("{:?}", resp.len())
+        },
+        Some(Err(e)) => {
+
+                rsx! {Link { to: Route::Home {}, "Go to counter" }
+                p {"Blog post {e}"}}
+
+        }
+        None => {
+            rsx! {
+                p {"Loading() "}
+            }
+        },
+    }}
 }
 
 #[component]
 fn Home() -> Element {
-    let mut count = use_signal(|| 0);
+    let jobs = use_resource(move || async move { api::get_jobs().await });
 
     rsx! {
         div {
             class: "container mx-auto mt-10 flex justify-center",
 
         }
-            // Link {
-            //     to: Route::Blog {
-            //         id: count()
-            //     },
-            //     "Go to blog"
-            // }
+            Link {
+                to: Route::Blog {
+                    id: 22
+                },
+                "Go to blog"
+            }
             style {{include_str!("../assets/tailwind.css")}}
            body { class: "bg-gray-50 p-8 mt-10",
             div { class:"max-w-4xl mx-auto",
@@ -63,20 +85,44 @@ fn Home() -> Element {
             div {class:"grid grid-cols-1 sm:grid-cols-2 gap-6",
               //  <!-- Job Card -->
 
-              for i in 0..10 {
-                Card {
-                    title: "Vista {i}",
-                    role: "UI/UX Designer",
-                    rate: "$7000/hr",
-                    location: "Jakarta, IND",
-                    experience: "5 years",
-                    skills: "Figma, Sketch, Adobe XD",
-                    description: "Looking for a creative UI/UX Designer to join our team."
-                }
-              }
 
-              
-           
+
+                match &*jobs.read() {
+                    Some(Ok(resp)) => {
+
+                            rsx! {
+                              //  Link { to: Route::Home {}, "Go to counter" },
+                              for i in 0..resp.len()-1{
+
+                              Card {
+                                title: "{resp[i].title}",
+                                role: "UI/UX Designer",
+                                rate: "$7000/hr",
+                                location: "Jakarta, IND",
+                                experience: "5 years",
+                                skills: "Figma, Sketch, Adobe XD",
+                                description: "Looking for a creative UI/UX Designer to join our team.",
+                                site: "{resp[i].html_url}"
+                            }}
+                        }
+
+                        //println!("{:?}", resp.len())
+                    },
+                    Some(Err(e)) => {
+
+                            rsx! {Link { to: Route::Home {}, "Go to counter" }
+                            p {"Blog post {e}"}}
+
+                    }
+                    None => {
+                        rsx! {
+                            p {"Loading() "}
+                        }
+                    },
+                }
+
+
+
                 //<!-- Repita para outros cartões de empregos -->
                // <!-- Exemplo de outro cartão -->
 
@@ -100,6 +146,7 @@ fn Card(
     experience: String,
     skills: String,
     description: String,
+    site: String,
 ) -> Element {
     let mut is_expanded = use_signal(|| false);
 
@@ -114,7 +161,8 @@ fn Card(
                     p { "{role}" }
                     }
         }
-                span {class:"text-blue-500 text-xs font-semibold","Onsite"}
+                a {r#type:"link",class:"text-blue-500 text-xs font-semibold",href:"{site}","Onsite"
+            }
     }
             div {class:"mt-4",
                 span {class:"text-green-500 font-semibold","$7000/hr"}
